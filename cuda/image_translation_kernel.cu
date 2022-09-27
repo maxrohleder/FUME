@@ -19,7 +19,7 @@ __global__ void translate_image_kernel(
 
     // using accessors, we can use image.size(idx) and indexing image[c][r]
     // TODO implement functionality
-    output[c][r] = 1
+    // output[c][r] = (scalar_t) 1;
 }
 
 
@@ -34,7 +34,7 @@ std::vector<torch::Tensor> translate_image_cuda( torch::Tensor input, torch::Ten
 
     // TODO define a 2d grid
     const int threads = 1024;
-    const dim3 blocks((state_size + threads - 1) / threads, batch_size);
+    const dim3 blocks((channels + threads - 1) / threads, batch_size);
 
     // invoke kernel
     AT_DISPATCH_FLOATING_TYPES(input.type(), "translate_image_cuda", ([&] {
