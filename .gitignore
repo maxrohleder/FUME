@@ -1,2 +1,5 @@
-cuda/cmake-build-debug-visual-studio
+cuda/cmake-build-debug
 .idea
+build
+dist
+fume_torch.egg-info
