@@ -13,12 +13,54 @@ __global__ void translate_image_kernel(
 
     // indexing the batches and each spatial dimensions of input (batch, v, u)
     auto b = blockIdx.x * blockDim.x + threadIdx.x;
-    auto v = blockIdx.y * blockDim.y + threadIdx.y;
-    auto u = blockIdx.z * blockDim.z + threadIdx.z;
+    auto u = blockIdx.y * blockDim.y + threadIdx.y;
+    auto v = blockIdx.z * blockDim.z + threadIdx.z;
 
-    // using accessors, we can use image.size(idx) and indexing image[c][r]
-    for (int c = 0; c < image.size(1); c++){
-        output[b][c][v][u] = 1;
+    // check boundaries
+    if (b < output.size(0) && u < output.size(2) && v < output.size(3)) {
+
+        // using accessors, we can use image.size(idx) and indexing image[x][y]
+        for (int c = 0; c < output.size(1); c++) {
+
+            // calculate homogenous epipolar line ax + by + c = 0
+//            scalar_t l1 = F[b][0][0] * v + F[b][0][1] * u + F[b][0][2];
+//            scalar_t l2 = F[b][1][0] * v + F[b][1][1] * u + F[b][1][2];
+//            scalar_t l3 = F[b][2][0] * v + F[b][2][1] * u + F[b][2][2];
+
+            scalar_t l1 = F[b][0][0] * u + F[b][0][1] * v + F[b][0][2];
+            scalar_t l2 = F[b][1][0] * u + F[b][1][1] * v + F[b][1][2];
+            scalar_t l3 = F[b][2][0] * u + F[b][2][1] * v + F[b][2][2];
+
+            // calculate line equation parameters y = mx + t aka. v = mu + t
+            scalar_t m = - l1 / l2;
+            scalar_t t = - l3 / l2;
+
+            // sum over line in input image
+            scalar_t res = 0;
+
+            for (int u1 = 0; u1 < image.size(2); u1++) {
+
+                // line equation
+                scalar_t v1 = m * u1 + t;
+
+                // check boundaries in input image
+                if (v1 >= image.size(3) | v1 < 0 | isnan(v1)) {
+                    continue;
+                }
+
+                // calculate interpolation coefficients
+                int v1c = (int) ceil(v1);
+                scalar_t cdist = abs(ceil(v1) - v1);
+                int v1f = (int) floor(v1);
+                scalar_t fdist = abs(floor(v1) - v1);
+
+                // add interpolated values
+                res += cdist * image[b][c][u1][v1f] + fdist * image[b][c][u1][v1c];
+
+            // assign value of line-integral
+            output[b][c][u][v] = res;
+            }
+        }
     }
 }
 
@@ -35,7 +77,7 @@ torch::Tensor translate_image_cuda( const torch::Tensor& input, const torch::Ten
 
     // define constants and output
     const auto batch_size = input.size(0);
-    const auto channels = input.size(1);
+    const int channels = (int) input.size(1);
     const auto height = input.size(2);
     const auto width = input.size(3);
     auto new_image = torch::zeros_like(input);

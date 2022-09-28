@@ -6,7 +6,7 @@ FUndamental Matrix based Epipolar Image Translation Layer.
 
 This repository is devided in two sections. The python part defines the pytorch 
 interface implementing a `nn.module` and a `autograd.function`. This can be found 
-in [fume_layer.py](fume_layer.py).
+in [fume_layer.py](fume.py).
 
 The underlying implementation of the image translation layer is found in the 
 [cuda](cuda) folder. The `.cpp` files take care of framework-related functions

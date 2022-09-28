@@ -18,7 +18,7 @@ def calculate_fundamental_matrix(P_src, P_dst):
     C1 = -np.linalg.inv(P_src[:3, :3]) @ P_src[:3, 3]
 
     # compute epipole == projection of camera center on target view plane
-    e = P_dst @ np.pad(np.squeeze(C1), (0, 1), constant_values=1)
+    e = P_dst @ np.pad(C1, (0, 1), constant_values=1)
 
     # construct the fundamental matrix
     return np.cross(e, np.eye(e.shape[0]) * -1) @ P_dst @ np.linalg.pinv(P_src)
@@ -45,15 +45,11 @@ class FumeImageTranslation(torch.autograd.Function):
 
 
 class Fume3dLayer(nn.Module):
-    def __init__(self, P1, P2):
+    def __init__(self):
         super(Fume3dLayer, self).__init__()
-        '''
-        Given two projection matrices P1, P2 in shape (3, 4) this operator calculates epipolar images.
-        '''
-        self.F21 = calculate_fundamental_matrix(P_src=P1, P_dst=P2)
-        self.F12 = calculate_fundamental_matrix(P_src=P2, P_dst=P1)
 
-    def forward(self, view1):
+
+    def forward(self, view1, F21, F12):
         assert view1.ndim == 4, "Input must have shape (B, C, H, W)"
         # returns view1 mapped into the projective transform P2
-        return FumeImageTranslation.apply(view1, self.F21, self.F12)
+        return FumeImageTranslation.apply(view1, F21, F12)
