@@ -18,7 +18,7 @@ def calculate_fundamental_matrix(P_src, P_dst):
     C1 = -np.linalg.inv(P_src[:3, :3]) @ P_src[:3, 3]
 
     # compute epipole == projection of camera center on target view plane
-    e = P_dst @ C1
+    e = P_dst @ np.pad(np.squeeze(C1), (0, 1), constant_values=1)
 
     # construct the fundamental matrix
     return np.cross(e, np.eye(e.shape[0]) * -1) @ P_dst @ np.linalg.pinv(P_src)
