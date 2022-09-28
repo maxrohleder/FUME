@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     # translate
     fume3d = Fume3dLayer()
-    CM1 = fume3d(view2_bin, F12, F21)
-    CM2 = fume3d(view2_bin, F21, F12)
+    CM1 = fume3d(view2_bin, F21, F12)
+    CM2 = fume3d(view1_bin, F12, F21)
 
     # plot
     plt.figure(figsize=(20, 10))
