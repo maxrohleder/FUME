@@ -8,9 +8,10 @@ setup(
     author_email='Maximilian.Rohleder@fau.de',
     description='Trainable Fundamental Matrix based Epipolar Image Translation Layer (PyTorch GPU)',
     url='https://github.com/maxrohleder/fume',
-    py_modules=['fume_layer'],
+    py_modules=['fume'],
     ext_modules=[
         CUDAExtension('fume_torch_lib', [
+            'cuda/bind_fume.cpp',
             'cuda/image_translation.cpp',
             'cuda/image_translation_kernel.cu'
         ])
