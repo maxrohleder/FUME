@@ -1,6 +1,22 @@
-# FUME Image Translation
+# FUME - Fundamental Matrix based Epipolar Image Translation (Pytorch)
 
-FUndamental Matrix based Epipolar Image Translation Layer.
+This derivable pytorch operator allows to translate projection images to epipolar line images in another view. 
+For a given image $p_1(u, v)$ with points $P_1$ and $P_2$ on it, this operator calculates and draws the epipolar lines $l_1$, $l_2$ in the consistency map $CM_2(u', v')$.
+
+![Dual View Geometry](https://github.com/maxrohleder/FUME/blob/assets/img/DualViewLineGeometry.png)
+
+When applied to entire images, epipolar consistency maps emerge. These maps can be used as a geometry informed prior during model training. Applications include the reduction of false positives in segmentation task and the improvement of segmentation of partially occluded objects using the second view.
+
+![example image](https://github.com/maxrohleder/FUME/blob/assets/img/cubes_mapped.png).
+
+## Install Instructions
+
+
+```shell
+git clone https://github.com/maxrohleder/FUME.git
+cd FUME
+pip install -e .
+```
 
 ## Development Setup
 
