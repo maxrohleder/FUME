@@ -1,6 +1,7 @@
 #include <torch/torch.h>
 #include <iostream>
 #include "image_translation.h"
+using namespace torch::indexing;
 
 int main() {
     auto options = torch::dtype(torch::kFloat32).device(torch::kCUDA).requires_grad(false);
@@ -9,8 +10,10 @@ int main() {
                                                         {462.822527, 4266.546518, -433140.893415}}}, options);
 
     torch::Tensor view1 = torch::zeros({1, 1, 976, 976}, options);
+    view1.index_put_({0, 0, Slice(50, 100), Slice(50, 100)}, 1);
+
     torch::Tensor view2 = translate_image(view1, F);
 
-    std::cout << F << std::endl;
+    std::cout << F.dim() << std::endl;
     std::cout << view2 << std::endl;
 }
