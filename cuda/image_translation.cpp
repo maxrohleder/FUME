@@ -1,11 +1,10 @@
 #include <torch/extension.h>
-#include <vector>
 
 // CUDA forward declarations (implemented in image_translation_kernel.cu)
 
-std::vector<torch::Tensor> translate_image_cuda(
-    torch::Tensor input,
-    torch::Tensor F);
+torch::Tensor translate_image_cuda(
+        const torch::Tensor& input,
+        const torch::Tensor& F) ;
 
 // C++ interface
 
@@ -13,17 +12,11 @@ std::vector<torch::Tensor> translate_image_cuda(
 #define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
 #define CHECK_INPUT(x) CHECK_CUDA(x); CHECK_CONTIGUOUS(x)
 
-std::vector<torch::Tensor> translate_image(
-    torch::Tensor input,
-    torch::Tensor F) {
+torch::Tensor translate_image(
+    const torch::Tensor& input,
+    const torch::Tensor& F) {
   CHECK_INPUT(input);
   CHECK_INPUT(F);
 
   return translate_image_cuda(input, F);
-}
-
-// Python bindings
-
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("translate", &translate_image, "Epipolar Image Translation (CUDA)");
 }
