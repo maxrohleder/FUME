@@ -23,10 +23,6 @@ __global__ void translate_image_kernel(
         for (int c = 0; c < output.size(1); c++) {
 
             // calculate homogenous epipolar line ax + by + c = 0
-//            scalar_t l1 = F[b][0][0] * v + F[b][0][1] * u + F[b][0][2];
-//            scalar_t l2 = F[b][1][0] * v + F[b][1][1] * u + F[b][1][2];
-//            scalar_t l3 = F[b][2][0] * v + F[b][2][1] * u + F[b][2][2];
-
             scalar_t l1 = F[b][0][0] * u + F[b][0][1] * v + F[b][0][2];
             scalar_t l2 = F[b][1][0] * u + F[b][1][1] * v + F[b][1][2];
             scalar_t l3 = F[b][2][0] * u + F[b][2][1] * v + F[b][2][2];
@@ -56,10 +52,9 @@ __global__ void translate_image_kernel(
 
                 // add interpolated values
                 res += cdist * image[b][c][u1][v1f] + fdist * image[b][c][u1][v1c];
-
+            }
             // assign value of line-integral
             output[b][c][u][v] = res;
-            }
         }
     }
 }
@@ -83,7 +78,7 @@ torch::Tensor translate_image_cuda( const torch::Tensor& input, const torch::Ten
     auto new_image = torch::zeros_like(input);
 
     // define a 3d grid. 4 in batch dimension, 16 in x and y
-    dim3 threadsPerBlock(4,16, 16);  // b, v, u
+    dim3 threadsPerBlock(4, 16, 16);  // b, v, u
     dim3 numBlocks((batch_size + threadsPerBlock.x -1) / threadsPerBlock.x,
                    (height + threadsPerBlock.y -1) / threadsPerBlock.y,
                    (width + threadsPerBlock.z -1) / threadsPerBlock.z);
