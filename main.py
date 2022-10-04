@@ -41,7 +41,7 @@ def cpu_project_volume(volume, pmat, detector_shape=(976, 976), block_filter=Fal
     outside_ratio = (samples_dec.shape[1] - samples_dec_boundary_checked.shape[1]) / samples_dec.shape[1]
     positions = np.round(samples_dec_boundary_checked).astype(int)  # (2, n)
 
-    # maybe warn if a lot of projectiona do not land on detector
+    # maybe warn if a lot of projections do not land on detector
     if outside_ratio > 0.2:
         logging.warning(f"{outside_ratio * 100} percent ouf points not projected onto detector")
 
@@ -84,8 +84,8 @@ if __name__ == '__main__':
     P2 = P2 @ xzy_from_iso @ iso_from_ijk
 
     # calculate fundamental matrix to map coordinates from P1 to lines in P2 (l2 = F21 @ x1)
-    F21 = torch.tensor(calculate_fundamental_matrix(P_src=P1, P_dst=P2).reshape((1, 3, 3)), device='cuda')
-    F12 = torch.tensor(calculate_fundamental_matrix(P_src=P2, P_dst=P1).reshape((1, 3, 3)), device='cuda')
+    F12 = torch.tensor(calculate_fundamental_matrix(P_src=P1, P_dst=P2).reshape((1, 3, 3)), device='cuda')
+    F21 = torch.tensor(calculate_fundamental_matrix(P_src=P2, P_dst=P1).reshape((1, 3, 3)), device='cuda')
 
     # create projection images
     view1 = cpu_project_volume(cubes_volume, P1, block_filter=True)
@@ -99,8 +99,8 @@ if __name__ == '__main__':
 
     # translate
     fume3d = Fume3dLayer()
-    CM1 = fume3d(view2_bin, F21, F12)
-    CM2 = fume3d(view1_bin, F12, F21)
+    CM1 = fume3d(view2_bin, F12, F21)
+    CM2 = fume3d(view1_bin, F21, F12)
 
     # plot
     plt.figure(figsize=(20, 10))

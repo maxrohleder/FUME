@@ -4,7 +4,7 @@ import numpy as np
 import fume_torch_lib  # name defined in setup.py as cuda_extension
 
 
-def calculate_fundamental_matrix(P_src, P_dst):
+def calculate_fundamental_matrix(P_src: np.ndarray, P_dst: np.ndarray) -> np.ndarray:
     """
     Returns the fundamental matrix F which maps a coordinate x1 in projection P_src onto a line l2 in projection P_dst
     l2 = F21 @ x1
