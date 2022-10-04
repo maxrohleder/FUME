@@ -41,7 +41,7 @@ class FumeImageTranslation(torch.autograd.Function):
         This gradient shaped (B, C, H, W) is mapped onto the similar shaped input.
         '''
         Finv = ctx.saved_tensors[0]
-        return fume_torch_lib.translate(grad, Finv)
+        return fume_torch_lib.translate(grad, Finv), None, None
 
 
 class Fume3dLayer(nn.Module):
