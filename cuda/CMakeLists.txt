@@ -1,7 +1,7 @@
 # to find this path, run this in your preferred python env: "import sysconfig;print(sysconfig.get_paths()['include'])"
 include_directories(/home/dl/miniconda3/envs/fume/include/python3.10)
 # set this to the directory where libtorch was unzipped to
-include_directories(/usr/include/libtorch)
+set(CMAKE_PREFIX_PATH /usr/include/libtorch)
 
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(FUME CXX CUDA)
