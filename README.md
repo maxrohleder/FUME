@@ -13,12 +13,15 @@ After installation, run the [main.py](main.py) script to get this image:
 
 ## Install Instructions
 
+First, install a suitable pytorch installation (https://pytorch.org/get-started/locally/). It comes with the necessary libraries build the cuda sources in this implementation. To install the latest version right from this repository, do this:
 
 ```shell
 git clone https://github.com/maxrohleder/FUME.git
 cd FUME
 pip install -e .
 ```
+
+To test the installation, run the main file (e.g. `python main.py`). You should get an image similar to the one above. The layers have been tested on Windows and linux using python 3.10 and the CUDA 11.3 installation of pytorch (comes with cudNN 8.0).
 
 ## Development Setup
 
