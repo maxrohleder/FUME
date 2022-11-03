@@ -127,8 +127,8 @@ if __name__ == '__main__':
         # translate
         fume3d = Fume3dLayer()
         factor = torch.tensor([downsample_factor], dtype=torch.float64, device='cuda', requires_grad=False)
-        CM1 = fume3d(view2_bin, F12, F21, factor)
-        CM2 = fume3d(view1_bin, F21, F12, factor)
+        CM1 = fume3d(view2_bin, F12, F21, downsampled_factor=factor)
+        CM2 = fume3d(view1_bin, F21, F12, downsampled_factor=factor)
 
         # plot
         plt.subplot(141 + i)
