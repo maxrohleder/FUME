@@ -4,7 +4,8 @@
 
 torch::Tensor translate_image_cuda(
         const torch::Tensor& input,
-        const torch::Tensor& F) ;
+        const torch::Tensor& F,
+        const auto factor) ;
 
 // C++ interface
 
@@ -14,9 +15,10 @@ torch::Tensor translate_image_cuda(
 
 torch::Tensor translate_image(
     const torch::Tensor& input,
-    const torch::Tensor& F) {
+    const torch::Tensor& F,
+    const auto factor) {
   CHECK_INPUT(input);
   CHECK_INPUT(F);
 
-  return translate_image_cuda(input, F);
+  return translate_image_cuda(input, F, factor);
 }

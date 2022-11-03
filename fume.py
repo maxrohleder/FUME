@@ -26,14 +26,14 @@ def calculate_fundamental_matrix(P_src: np.ndarray, P_dst: np.ndarray) -> np.nda
 
 class FumeImageTranslation(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input, F, Finv):
+    def forward(ctx, input, F, Finv, downsampled_factor):
         '''
         Translates an input view tensor in shape (B, C, H, W) onto an epipolar similar 
         shaped image using the geometry expressed through the fundamental matrix F in 
         shape (3, 3). The inverse operation is saved for the backward pass.
         '''
-        ctx.save_for_backward(Finv)
-        return fume_torch_lib.translate(input, F)
+        ctx.save_for_backward(Finv, downsampled_factor)
+        return fume_torch_lib.translate(input, F, downsampled_factor)
 
     @staticmethod
     def backward(ctx, grad):
@@ -41,15 +41,23 @@ class FumeImageTranslation(torch.autograd.Function):
         This gradient shaped (B, C, H, W) is mapped onto the similar shaped input.
         '''
         Finv = ctx.saved_tensors[0]
-        return fume_torch_lib.translate(grad, Finv), None, None
+        downsampled_factor = ctx.saved_tensors[1]
+        return fume_torch_lib.translate(grad, Finv, downsampled_factor), None, None
 
 
 class Fume3dLayer(nn.Module):
     def __init__(self):
         super(Fume3dLayer, self).__init__()
 
-
-    def forward(self, view1, F21, F12):
+    def forward(self, view1, F21, F12, downsampled_factor=1):
+        """
+        Calculate Epipolar View Line Image
+        @param view1: input image
+        @param F21: Fundamental Matrix mapping a point in the output `view2` onto a line in the input `view1`
+        @param F12: Reverse Mapping; a point on view1 onto a line in view2. Used in the backward pass
+        @param downsampled_factor:
+        @return: view2 epipolar line image in shape `view1.shape`
+        """
         assert view1.ndim == 4, "Input must have shape (B, C, H, W)"
-        # returns view1 mapped into the projective transform P2
-        return FumeImageTranslation.apply(view1, F21, F12)
+        # returns a perspective mapping of all pixels in view1 onto view2
+        return FumeImageTranslation.apply(view1, F21, F12, downsampled_factor=downsampled_factor)

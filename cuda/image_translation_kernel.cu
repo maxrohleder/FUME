@@ -9,6 +9,7 @@ template <typename scalar_t>
 __global__ void translate_image_kernel(
     const torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> image,
     const torch::PackedTensorAccessor32<scalar_t,3,torch::RestrictPtrTraits> F,
+    const scalar_t factor,
     torch::PackedTensorAccessor32<scalar_t,4,torch::RestrictPtrTraits> output) {
 
     // indexing the batches and each spatial dimensions of input (batch, v, u)
@@ -22,10 +23,14 @@ __global__ void translate_image_kernel(
         // using accessors, we can use image.size(idx) and indexing image[x][y]
         for (int c = 0; c < output.size(1); c++) {
 
+            // compensate for resolution difference if Fundamental was defined for different input size
+            uf = factor * u
+            vf = factor * v
+
             // calculate homogenous epipolar line ax + by + c = 0
-            scalar_t l1 = F[b][0][0] * u + F[b][0][1] * v + F[b][0][2];
-            scalar_t l2 = F[b][1][0] * u + F[b][1][1] * v + F[b][1][2];
-            scalar_t l3 = F[b][2][0] * u + F[b][2][1] * v + F[b][2][2];
+            scalar_t l1 = F[b][0][0] * uf + F[b][0][1] * vf + F[b][0][2];
+            scalar_t l2 = F[b][1][0] * uf + F[b][1][1] * vf + F[b][1][2];
+            scalar_t l3 = F[b][2][0] * uf + F[b][2][1] * vf + F[b][2][2];
 
             // calculate line equation parameters y = mx + t aka. v = mu + t
             scalar_t m = - l1 / l2;
@@ -37,7 +42,10 @@ __global__ void translate_image_kernel(
             for (int u1 = 0; u1 < image.size(2); u1++) {
 
                 // line equation
-                scalar_t v1 = m * u1 + t;
+                scalar_t v1 = m * u1 * factor + t;
+
+                // re scale back to down-sampled image size
+                v1 = v1 / factor
 
                 // check boundaries in input image
                 if (v1 >= image.size(3) | v1 < 0 | isnan(v1)) {
@@ -66,9 +74,10 @@ __global__ void translate_image_kernel(
  * integrated over.
  * @param input image data from view1 in shape (B, C, H, W)
  * @param F Fundamental Matrix in shape (B, 3, 3) to translate a coordinate x2 in view2 to a line l1 in view1
+ * @param factor The physical image size (as assumed in the Fundamental Matrix) is input.shape * factor
  * @return translated view containing epipolar lines in same shape as input data
  */
-torch::Tensor translate_image_cuda( const torch::Tensor& input, const torch::Tensor& F) {
+torch::Tensor translate_image_cuda( const torch::Tensor& input, const torch::Tensor& F, const auto factor) {
 
     // define constants and output
     const auto batch_size = input.size(0);
@@ -88,6 +97,7 @@ torch::Tensor translate_image_cuda( const torch::Tensor& input, const torch::Ten
         translate_image_kernel<scalar_t><<<numBlocks, threadsPerBlock>>>(
             input.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>(),
             F.packed_accessor32<scalar_t,3,torch::RestrictPtrTraits>(),
+            factor,
             new_image.packed_accessor32<scalar_t,4,torch::RestrictPtrTraits>());
     });
 
