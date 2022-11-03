@@ -49,7 +49,7 @@ class Fume3dLayer(nn.Module):
     def __init__(self):
         super(Fume3dLayer, self).__init__()
 
-    def forward(self, view1, F21, F12, downsampled_factor=1):
+    def forward(self, view1, F21, F12, downsampled_factor=None):
         """
         Calculate Epipolar View Line Image
         @param view1: input image
@@ -59,5 +59,7 @@ class Fume3dLayer(nn.Module):
         @return: view2 epipolar line image in shape `view1.shape`
         """
         assert view1.ndim == 4, "Input must have shape (B, C, H, W)"
+        if not downsampled_factor:
+            downsampled_factor = torch.ones(view1.size(0), dtype=view1.dtype, device='cuda', requires_grad=False)
         # returns a perspective mapping of all pixels in view1 onto view2
-        return FumeImageTranslation.apply(view1, F21, F12, downsampled_factor=downsampled_factor)
+        return FumeImageTranslation.apply(view1, F21, F12, downsampled_factor)

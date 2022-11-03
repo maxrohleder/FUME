@@ -114,3 +114,28 @@ if __name__ == '__main__':
     plt.imshow(np.squeeze(CM2.cpu()).T, 'gray', alpha=0.4)
     plt.axis('off')
     plt.show()
+
+    # downsample images and correct using downsampled_factor
+    fig = plt.figure(figsize=(20, 5))
+    for i, downsample_factor in enumerate([2, 4, 8, 16]):
+        view1d, view2d = view1[::downsample_factor, ::downsample_factor], view2[::downsample_factor, ::downsample_factor]
+        view1_bin, view2_bin = np.zeros_like(view1d), np.zeros_like(view2d)
+        view1_bin[view1d > 0], view2_bin[view2d > 0] = 1, 1
+        view1_bin = torch.tensor(view1_bin.reshape((1, 1, 976//downsample_factor, 976//downsample_factor)), device='cuda')
+        view2_bin = torch.tensor(view2_bin.reshape((1, 1, 976//downsample_factor, 976//downsample_factor)), device='cuda')
+
+        # translate
+        fume3d = Fume3dLayer()
+        factor = torch.tensor([downsample_factor], dtype=torch.float64, device='cuda', requires_grad=False)
+        CM1 = fume3d(view2_bin, F12, F21, factor)
+        CM2 = fume3d(view1_bin, F21, F12, factor)
+
+        # plot
+        plt.subplot(141 + i)
+        plt.title(f"resolution {view1d.shape}")
+        plt.imshow(view1d.T, 'gray')
+        plt.imshow(np.squeeze(CM1.cpu()).T, 'Blues', alpha=0.4)
+        plt.axis('off')
+
+    fig.tight_layout()
+    plt.show()
