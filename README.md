@@ -11,6 +11,28 @@ After installation, run the [main.py](main.py) script to get this image:
 
 ![example image](https://github.com/maxrohleder/FUME/blob/assets/img/cubes_mapped.png).
 
+#### NEW: Downsampled Image translation
+
+In Deep Learning models, it is often the case, that images are downsampled. The pre-calculated
+fundamental matrices however require a fixed size (eg. `(976, 976)`). To enable a dynamic 
+downsampling without having to instantiate a layer per resolution, we introduced the
+`downsampled_factor` parameter. 
+
+So, for example, if you downsample an image by a factor of two and now your tensors 
+spatial dimensions are `(488, 488)`, you can adapt this by setting this option.
+
+```python
+fume3d = Fume3dLayer()
+factor = torch.tensor([downsample_factor], dtype=torch.float64, device='cuda', requires_grad=False)
+CM1 = fume3d(view2_bin, F12, F21, downsampled_factor=factor)
+CM2 = fume3d(view1_bin, F21, F12, downsampled_factor=factor)
+```
+For more details see ![main.py lines 118ff](main.py).
+
+This enables the user to get downsampled images like this:
+
+![downsampling demo](https://github.com/maxrohleder/FUME/blob/assets/img/downsampling.png)
+
 ## Install Instructions
 
 First, install a suitable pytorch installation (https://pytorch.org/get-started/locally/). It comes with the necessary libraries build the cuda sources in this implementation. To install the latest version right from this repository, do this:

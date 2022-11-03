@@ -13,6 +13,15 @@ P2 = np.array([[-0.5, -0., 4., 50.],
                [-0.5, -4., -0., 50.],
                [-0.01, -0., -0., 1.]])
 
+# define two real projection matrices
+P1real = np.array([[-1.491806664, -6.0116547806, -0.0032140855, 497.8171012864],
+                   [-0.7840045398, 0.0883435020, 6.1466040404, 486.4775230631],
+                   [-0.0015992436, 0.0001893259, 0.0000025475, 1.0000000000]])  # <M0>
+P2real = np.array([[5.928340124, -1.7884644150, -0.0147336253, 483.7053684109],
+                   [-0.1191121191, -0.7833319327, 6.1436160514, 493.1060850290],
+                   [-0.0002700307, -0.0015866526, -0.0000015344, 1.0000000000]])  # <M179>
+
+
 # define sample points
 CORNERS = np.array([[-10, -10, -10],
                     [-10, -10, 10],
@@ -58,6 +67,18 @@ class FundamentalMatrixTest(unittest.TestCase):
 
             # test if the point x2 is on the calculated line l2
             self.assertAlmostEqual(x2[1], x2[0] * m + t)
+
+
+class DownsampledViewTranslation(unittest.TestCase):
+
+    def setUp(self):
+        assert torch.cuda.is_available()
+        self.F12 = torch.tensor(calculate_fundamental_matrix(P_src=P2, P_dst=P1).reshape((1, 3, 3)), device='cuda')
+        self.F21 = torch.tensor(calculate_fundamental_matrix(P_src=P1, P_dst=P2).reshape((1, 3, 3)), device='cuda')
+
+    def test_shapes(self):
+        # TODO think of a test case
+        pass
 
 
 class GradientTest(unittest.TestCase):

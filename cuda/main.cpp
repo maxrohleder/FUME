@@ -12,7 +12,8 @@ int main() {
     torch::Tensor view1 = torch::zeros({1, 1, 976, 976}, options);
     view1.index_put_({0, 0, Slice(50, 100), Slice(50, 100)}, 1);
 
-    torch::Tensor view2 = translate_image(view1, F);
+    torch::Tensor factor = torch::tensor(1, options);
+    torch::Tensor view2 = translate_image(view1, F, factor);
 
     std::cout << F.dim() << std::endl;
     std::cout << view2 << std::endl;

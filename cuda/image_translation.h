@@ -7,4 +7,5 @@
 
 torch::Tensor translate_image(
         const torch::Tensor& input,
-        const torch::Tensor& F);
+        const torch::Tensor& F,
+        const torch::Tensor& factor);
