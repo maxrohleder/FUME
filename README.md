@@ -45,6 +45,10 @@ This enables the user to get downsampled images like this:
 
 ![downsampling demo](https://github.com/maxrohleder/FUME/blob/assets/img/downsampling.png)
 
+Padding and downsampling (needed in many CNN architectures) are also supported:
+
+![padding demo](https://github.com/maxrohleder/FUME/blob/assets/img/Downsampled_Scaled.png)
+
 ## Install Instructions
 
 First, install a suitable pytorch installation (https://pytorch.org/get-started/locally/). It comes with the necessary libraries build the cuda sources in this implementation. To install the latest version right from this repository, do this:
