@@ -2,6 +2,7 @@ from fume import Fume3dLayer, calculate_fundamental_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn.functional as F
 import logging
 
 v_mm = 0.313
@@ -149,21 +150,32 @@ if __name__ == '__main__':
         plt.axis('off')
     fig.tight_layout()
 
-    # downsample to irregular image sizes
-    import torch.nn.functional as F
+    # padd and downsample
     p = 200
-    view1_512 = F.pad(torch.tensor(view1[::2, ::2].reshape(1, 1, 488, 488), device="cuda"), (p, p, p, p))
-    view2_512 = F.pad(torch.tensor(view2[::2, ::2].reshape(1, 1, 488, 488), device="cuda"), (p, p, p, p))
+    s = 8
+
+    # adapt matrices to project onto center of (976, 976) array
+    scale = np.diag([1/s, 1/s, 1])
+    P1c = scale @ uv_centered @ P1
+    P2c = scale @ uv_centered @ P2
+
+    # calculate fundamental matrix to map coordinates from P1 to lines in P2 (l2 = F21 @ x1)
+    F12 = torch.tensor(calculate_fundamental_matrix(P_src=P1c, P_dst=P2c).reshape((1, 3, 3)), device='cuda')
+    F21 = torch.tensor(calculate_fundamental_matrix(P_src=P2c, P_dst=P1c).reshape((1, 3, 3)), device='cuda')
+
+    # define padding
+    view1_512 = F.pad(torch.tensor(view1[::s, ::s].reshape(1, 1, 976//s, 976//s), device="cuda"), (p, p, p, p))
+    view2_512 = F.pad(torch.tensor(view2[::s, ::s].reshape(1, 1, 976//s, 976//s), device="cuda"), (p, p, p, p))
 
     # translate
     fume3d = Fume3dLayer()
-    factor = torch.tensor([2], dtype=torch.float64, device='cuda', requires_grad=False)
+    factor = torch.tensor([1], dtype=torch.float64, device='cuda', requires_grad=False)
     CM1 = fume3d(view2_512, F12, F21, downsampled_factor=factor)
     CM2 = fume3d(view1_512, F21, F12, downsampled_factor=factor)
 
     # plot
-    plt.figure(figsize=(20, 10))
-    plt.suptitle("Irregular shape: (512, 512)")
+    fig = plt.figure(figsize=(10, 5))
+    plt.suptitle(f"Downsampled by factor {s}, padded with {p} pixels")
     plt.subplot(121)
     plt.imshow(np.squeeze(view1_512.cpu()).T, 'gray')
     plt.imshow(np.squeeze(CM1.cpu()).T, 'Blues', alpha=0.4)
@@ -171,4 +183,5 @@ if __name__ == '__main__':
     plt.subplot(122)
     plt.imshow(np.squeeze(view2_512.cpu()).T, 'Blues')
     plt.imshow(np.squeeze(CM2.cpu()).T, 'gray', alpha=0.4)
+    fig.tight_layout()
     plt.show()
