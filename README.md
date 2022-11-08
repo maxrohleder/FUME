@@ -11,11 +11,11 @@ After installation, run the [main.py](main.py) script to get this image:
 
 ![example image](https://github.com/maxrohleder/FUME/blob/assets/img/cubes_mapped.png).
 
-#### NEW: Downsampled Image translation
+#### NEW: Downsampled and padded Image translation
 
 In Deep Learning models, it is often the case, that images are downsampled. The pre-calculated
 fundamental matrices however require a fixed size (eg. `(976, 976)`). To enable a dynamic 
-downsampling without having to instantiate a layer per resolution, we introduced the
+downsampling without having to instantiate a new layer per resolution, we introduced the
 `downsampled_factor` parameter. 
 
 So, for example, if you downsample an image by a factor of two and now your tensors 
@@ -27,6 +27,18 @@ factor = torch.tensor([downsample_factor], dtype=torch.float64, device='cuda', r
 CM1 = fume3d(view2_bin, F12, F21, downsampled_factor=factor)
 CM2 = fume3d(view1_bin, F21, F12, downsampled_factor=factor)
 ```
+
+Furthermore, the projection matrices need to be defined to map onto the center of the detector. Eg. if the 
+detector has shape `(976, 976)`, the projection matrices need to be compensated by this:
+
+```python
+c = (976 / 2) - 0.5  # center of detector in pixels
+to_center = np.array([[1, 0, -c],
+                      [0, 1, -c],
+                      [0, 0, 1]])
+P1 = to_center @ P1
+```
+
 For more details see ![main.py lines 118ff](main.py).
 
 This enables the user to get downsampled images like this:
