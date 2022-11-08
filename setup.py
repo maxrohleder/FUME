@@ -3,7 +3,7 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 setup(
     name='fume_torch',
-    version='2022.10.04',
+    version='2022.11.08',
     author='Maximilian Rohleder',
     author_email='Maximilian.Rohleder@fau.de',
     description='Trainable Fundamental Matrix based Epipolar Image Translation Layer (PyTorch GPU)',

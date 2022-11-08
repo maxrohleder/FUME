@@ -17,15 +17,19 @@ __global__ void translate_image_kernel(
     auto u = blockIdx.y * blockDim.y + threadIdx.y;
     auto v = blockIdx.z * blockDim.z + threadIdx.z;
 
+    // constants
+    const auto width = (scalar_t) image.size(2);
+    const auto height = (scalar_t) image.size(3);
+
     // check boundaries
     if (b < output.size(0) && u < output.size(2) && v < output.size(3)) {
 
         // using accessors, we can use image.size(idx) and indexing image[x][y]
         for (int c = 0; c < output.size(1); c++) {
 
-            // compensate for resolution difference if Fundamental was defined for different input size
-            const scalar_t uf = factor[b] * u;
-            const scalar_t vf = factor[b] * v;
+            // compensate resolution difference and calculate coordinate relative to array center
+            const scalar_t uf = factor[b] * (u - (width / 2)) - 0.5;
+            const scalar_t vf = factor[b] * (v - (height / 2)) - 0.5;
 
             // calculate homogenous epipolar line ax + by + c = 0
             const scalar_t l1 = F[b][0][0] * uf + F[b][0][1] * vf + F[b][0][2];
@@ -41,11 +45,12 @@ __global__ void translate_image_kernel(
 
             for (int u1 = 0; u1 < image.size(2); u1++) {
 
-                // line equation
-                scalar_t v1 = m * u1 * factor[b] + t;
+                // line equation defined in coordinates
+                scalar_t u1c = factor[b] * (u1 - (width / 2) - 0.5);
+                scalar_t v1 = m * u1c + t;
 
-                // re-scale back to down-sampled image size
-                v1 = v1 / factor[b];
+                // re-scale back to down-sampled image size and relative to index 0
+                v1 = ((v1 + 0.5) / factor[b]) + height / 2;
 
                 // check boundaries in input image
                 if (v1 >= image.size(3) - 1 | v1 < 0 | isnan(v1)) {

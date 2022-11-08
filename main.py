@@ -9,11 +9,15 @@ xzy_from_iso = np.array([[v_mm, 0, 0, 0],
                          [0, v_mm, 0, 0],
                          [0, 0, v_mm, 0],
                          [0, 0, 0, 1]])
-c = 255.5  # (512 / 2) - 0.5
+c = (512 / 2) - 0.5  # center of volume
 iso_from_ijk = np.array([[1, 0, 0, -c],
                          [0, 1, 0, -c],
                          [0, 0, 1, -c],
                          [0, 0, 0, 1]])
+c = (976 / 2) - 0.5  # center of detector
+uv_centered = np.array([[1, 0, -c],
+                        [0, 1, -c],
+                        [0, 0, 1]])
 
 
 def cpu_project_volume(volume, pmat, detector_shape=(976, 976), block_filter=False):
@@ -37,7 +41,8 @@ def cpu_project_volume(volume, pmat, detector_shape=(976, 976), block_filter=Fal
     dec_img = np.zeros(detector_shape)
 
     # check boundaries and round to pixels
-    samples_dec_boundary_checked = samples_dec[:, np.all((samples_dec < detector_shape[0] - 1) * (samples_dec > 0), axis=0)]
+    samples_dec_boundary_checked = samples_dec[:,
+                                   np.all((samples_dec < detector_shape[0] - 1) * (samples_dec > 0), axis=0)]
     outside_ratio = (samples_dec.shape[1] - samples_dec_boundary_checked.shape[1]) / samples_dec.shape[1]
     positions = np.round(samples_dec_boundary_checked).astype(int)  # (2, n)
 
@@ -67,9 +72,9 @@ if __name__ == '__main__':
 
     # define cubes in standard sized volume
     cubes_volume = np.zeros((512, 512, 512))
-    cubes_volume[20:120, 20:70, 20:70] = 1       # 100 x 50 x 50
+    cubes_volume[20:120, 20:70, 20:70] = 1  # 100 x 50 x 50
     cubes_volume[230:280, 230:330, 230:280] = 1  # 50 x 100 x 50
-    cubes_volume[20:70, 390:440, 320:400] = 1    # 50 x 50 x 100
+    cubes_volume[20:70, 390:440, 320:400] = 1  # 50 x 50 x 100
 
     # load projection matrices (from a real 3d scan, views roughly 90 degrees apart)
     P1 = np.array([[-1.491806664, -6.0116547806, -0.0032140855, 497.8171012864],
@@ -79,13 +84,17 @@ if __name__ == '__main__':
                    [-0.1191121191, -0.7833319327, 6.1436160514, 493.1060850290],
                    [-0.0002700307, -0.0015866526, -0.0000015344, 1.0000000000]])  # <M179>
 
+    # adapt matrices to project onto center of (976, 976) array
+    P1c = uv_centered @ P1
+    P2c = uv_centered @ P2
+
     # adapt matrices to volume indices instead of mm
     P1 = P1 @ xzy_from_iso @ iso_from_ijk
     P2 = P2 @ xzy_from_iso @ iso_from_ijk
 
     # calculate fundamental matrix to map coordinates from P1 to lines in P2 (l2 = F21 @ x1)
-    F12 = torch.tensor(calculate_fundamental_matrix(P_src=P1, P_dst=P2).reshape((1, 3, 3)), device='cuda')
-    F21 = torch.tensor(calculate_fundamental_matrix(P_src=P2, P_dst=P1).reshape((1, 3, 3)), device='cuda')
+    F12 = torch.tensor(calculate_fundamental_matrix(P_src=P1c, P_dst=P2c).reshape((1, 3, 3)), device='cuda')
+    F21 = torch.tensor(calculate_fundamental_matrix(P_src=P2c, P_dst=P1c).reshape((1, 3, 3)), device='cuda')
 
     # create projection images
     view1 = cpu_project_volume(cubes_volume, P1, block_filter=True)
@@ -113,16 +122,18 @@ if __name__ == '__main__':
     plt.imshow(view2.T, 'Blues')
     plt.imshow(np.squeeze(CM2.cpu()).T, 'gray', alpha=0.4)
     plt.axis('off')
-    plt.show()
 
     # downsample images and correct using downsampled_factor
     fig = plt.figure(figsize=(20, 5))
     for i, downsample_factor in enumerate([2, 4, 8, 16]):
-        view1d, view2d = view1[::downsample_factor, ::downsample_factor], view2[::downsample_factor, ::downsample_factor]
+        view1d, view2d = view1[::downsample_factor, ::downsample_factor], view2[::downsample_factor,
+                                                                          ::downsample_factor]
         view1_bin, view2_bin = np.zeros_like(view1d), np.zeros_like(view2d)
         view1_bin[view1d > 0], view2_bin[view2d > 0] = 1, 1
-        view1_bin = torch.tensor(view1_bin.reshape((1, 1, 976//downsample_factor, 976//downsample_factor)), device='cuda')
-        view2_bin = torch.tensor(view2_bin.reshape((1, 1, 976//downsample_factor, 976//downsample_factor)), device='cuda')
+        view1_bin = torch.tensor(view1_bin.reshape((1, 1, 976 // downsample_factor, 976 // downsample_factor)),
+                                 device='cuda')
+        view2_bin = torch.tensor(view2_bin.reshape((1, 1, 976 // downsample_factor, 976 // downsample_factor)),
+                                 device='cuda')
 
         # translate
         fume3d = Fume3dLayer()
@@ -136,6 +147,28 @@ if __name__ == '__main__':
         plt.imshow(view1d.T, 'gray')
         plt.imshow(np.squeeze(CM1.cpu()).T, 'Blues', alpha=0.4)
         plt.axis('off')
-
     fig.tight_layout()
+
+    # downsample to irregular image sizes
+    import torch.nn.functional as F
+    p = 200
+    view1_512 = F.pad(torch.tensor(view1[::2, ::2].reshape(1, 1, 488, 488), device="cuda"), (p, p, p, p))
+    view2_512 = F.pad(torch.tensor(view2[::2, ::2].reshape(1, 1, 488, 488), device="cuda"), (p, p, p, p))
+
+    # translate
+    fume3d = Fume3dLayer()
+    factor = torch.tensor([2], dtype=torch.float64, device='cuda', requires_grad=False)
+    CM1 = fume3d(view2_512, F12, F21, downsampled_factor=factor)
+    CM2 = fume3d(view1_512, F21, F12, downsampled_factor=factor)
+
+    # plot
+    plt.figure(figsize=(20, 10))
+    plt.suptitle("Irregular shape: (512, 512)")
+    plt.subplot(121)
+    plt.imshow(np.squeeze(view1_512.cpu()).T, 'gray')
+    plt.imshow(np.squeeze(CM1.cpu()).T, 'Blues', alpha=0.4)
+
+    plt.subplot(122)
+    plt.imshow(np.squeeze(view2_512.cpu()).T, 'Blues')
+    plt.imshow(np.squeeze(CM2.cpu()).T, 'gray', alpha=0.4)
     plt.show()
