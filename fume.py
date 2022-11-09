@@ -40,8 +40,7 @@ class FumeImageTranslation(torch.autograd.Function):
         '''
         This gradient shaped (B, C, H, W) is mapped onto the similar shaped input.
         '''
-        Finv = ctx.saved_tensors[0]
-        downsampled_factor = ctx.saved_tensors[1]
+        Finv, downsampled_factor = ctx.saved_tensors
         return fume_torch_lib.translate(grad, Finv, downsampled_factor), None, None, None
 
 
@@ -59,7 +58,7 @@ class Fume3dLayer(nn.Module):
         @return: view2 epipolar line image in shape `view1.shape`
         """
         assert view1.ndim == 4, "Input must have shape (B, C, H, W)"
-        if not downsampled_factor:
+        if downsampled_factor is None:
             downsampled_factor = torch.ones(view1.size(0), dtype=view1.dtype, device='cuda', requires_grad=False)
         # returns a perspective mapping of all pixels in view1 onto view2
         return FumeImageTranslation.apply(view1, F21, F12, downsampled_factor)
