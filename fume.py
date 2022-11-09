@@ -42,7 +42,7 @@ class FumeImageTranslation(torch.autograd.Function):
         '''
         Finv = ctx.saved_tensors[0]
         downsampled_factor = ctx.saved_tensors[1]
-        return fume_torch_lib.translate(grad, Finv, downsampled_factor), None, None
+        return fume_torch_lib.translate(grad, Finv, downsampled_factor), None, None, None
 
 
 class Fume3dLayer(nn.Module):
