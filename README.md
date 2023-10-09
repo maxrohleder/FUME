@@ -7,6 +7,21 @@ For a given image $p_1(u, v)$ with points $P_1$ and $P_2$ on it, this operator c
 
 When applied to entire images, epipolar consistency maps emerge. These maps can be used as a geometry informed prior during model training. Applications include the reduction of false positives in segmentation task and the improvement of segmentation of partially occluded objects using the second view.
 
+For more information on the application of this operator, please refer to our [2023 MICCAI submission](https://link.springer.com/chapter/10.1007/978-3-031-43898-1_6). If this work is useful for your application, please cite our work as:
+
+```
+@InProceedings{10.1007/978-3-031-43898-1_6,
+author="Rohleder, Maximilian and Pradel, Charlotte and Wagner, Fabian and Thies, Mareike and Maul, Noah and Denzinger, Felix and Maier, Andreas and Kreher, Bjoern",
+editor="Greenspan, Hayit and Madabhushi, Anant and Mousavi, Parvin and Salcudean, Septimiu and Duncan, James and Syeda-Mahmood, Tanveer and Taylor, Russell",
+title="Enabling Geometry Aware Learning Through Differentiable Epipolar View Translation",
+booktitle="Medical Image Computing and Computer Assisted Intervention -- MICCAI 2023",
+year="2023",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="57--65",
+isbn="978-3-031-43898-1"
+}
+```
 After installation, run the [main.py](main.py) script to get this image:
 
 ![example image](https://github.com/maxrohleder/FUME/blob/assets/img/cubes_mapped.png).
